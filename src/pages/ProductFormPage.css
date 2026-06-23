@@ -1,8 +1,46 @@
+.toast {
+  position: fixed;
+  top: 70px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  animation: toast-in 0.3s ease;
+}
+
+.toast-success {
+  background: #ffffff;
+  border: 1px solid var(--border-glass);
+  border-left: 4px solid var(--success);
+  color: var(--text-primary);
+}
+
+.toast-success svg {
+  color: var(--success);
+  flex-shrink: 0;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .product-form-page {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 800px;
+  max-width: 920px;
   margin: 0 auto;
 }
 
@@ -10,6 +48,33 @@
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px 0 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.back-button svg {
+  flex-shrink: 0;
+}
+
+.back-button:hover {
+  background: var(--bg-glass-hover);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  transform: translateX(-2px);
 }
 
 .form-title {
@@ -20,8 +85,51 @@
 }
 
 .form-container {
-  padding: 32px;
-  border-radius: var(--radius-lg);
+  position: relative;
+  border-radius: var(--radius-xl);
+  background: #ffffff;
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.form-container-accent {
+  height: 6px;
+  width: 100%;
+  background: var(--accent-gradient);
+}
+
+.form-container-inner {
+  padding: 48px;
+  background: radial-gradient(
+      120% 60% at 100% 0%,
+      rgba(108, 92, 231, 0.05),
+      transparent 60%
+    ),
+    radial-gradient(
+      80% 50% at 0% 100%,
+      rgba(0, 206, 201, 0.04),
+      transparent 60%
+    );
+}
+
+.form-section-heading {
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.form-section-heading h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+.form-section-heading p {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 .product-form {
@@ -33,7 +141,39 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 24px;
+  gap: 20px 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.text-danger {
+  color: var(--danger);
+}
+
+.input-field {
+  width: 100%;
+  height: 44px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0 16px;
+  color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+
+.input-field:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.15);
 }
 
 .form-full-width {
@@ -57,13 +197,12 @@
   color: var(--text-primary);
   transition: all var(--transition-normal);
   resize: vertical;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .textarea-field:focus {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-primary);
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2);
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.15);
 }
 
 .form-actions {
@@ -84,12 +223,22 @@
 
 .form-error {
   color: var(--danger);
-  background: rgba(255, 107, 107, 0.1);
+  background: rgba(224, 56, 61, 0.06);
   border-radius: var(--radius-sm);
+}
+
+@media (max-width: 768px) {
+  .form-container-inner {
+    padding: 32px 28px;
+  }
 }
 
 @media (max-width: 600px) {
   .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .form-container-inner {
+    padding: 24px 20px;
   }
 }
