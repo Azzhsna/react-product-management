@@ -3,9 +3,14 @@ import './SearchBar.css';
 
 const SearchBar = ({ value, onChange, onSearch, placeholder = "Search..." }) => {
   const [localValue, setLocalValue] = useState(value || '');
+  const initialMount = React.useRef(true);
 
-  // Debounce logic
   useEffect(() => {
+    if (initialMount.current) {
+      initialMount.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
       if (onSearch) {
         onSearch(localValue);
@@ -13,7 +18,8 @@ const SearchBar = ({ value, onChange, onSearch, placeholder = "Search..." }) => 
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [localValue, onSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localValue]);
 
   const handleChange = (e) => {
     setLocalValue(e.target.value);

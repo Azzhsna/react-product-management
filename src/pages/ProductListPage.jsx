@@ -1,45 +1,76 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { fetchProducts, searchProducts, setSearchQuery, deleteProduct } from '../store/productSlice';
+import { 
+  fetchProducts, 
+  searchProducts, 
+  setSearchQuery, 
+  deleteProduct,
+  fetchCategories,
+  fetchProductsByCategory,
+  setSelectedCategory,
+  setSortParams,
+  setSkip,
+  setLimit
+} from '../store/productSlice';
 import SearchBar from '../components/shared/SearchBar';
 import Pagination from '../components/shared/Pagination';
 import Button from '../components/shared/Button';
+import Dropdown from '../components/shared/Dropdown';
 import './ProductListPage.css';
 
 const ProductListPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { products, total, skip, limit, loading, error, searchQuery } = useSelector((state) => state.products);
+  const { 
+    products, total, skip, limit, loading, error, 
+    searchQuery, categories, selectedCategory, sortBy, order 
+  } = useSelector((state) => state.products);
 
   const currentPage = Math.floor(skip / limit) + 1;
 
   useEffect(() => {
-    // If we have a search query, fetch using search endpoint, otherwise fetch normally
+    dispatch(fetchCategories());
+  }, [dispatch]);
+
+  useEffect(() => {
     if (searchQuery) {
-      dispatch(searchProducts({ query: searchQuery, limit, skip }));
+      dispatch(searchProducts({ query: searchQuery, limit, skip, sortBy, order }));
+    } else if (selectedCategory) {
+      dispatch(fetchProductsByCategory({ category: selectedCategory, limit, skip, sortBy, order }));
     } else {
-      dispatch(fetchProducts({ limit, skip }));
+      dispatch(fetchProducts({ limit, skip, sortBy, order }));
     }
-  }, [dispatch, skip, limit, searchQuery]);
+  }, [dispatch, skip, limit, searchQuery, selectedCategory, sortBy, order]);
 
   const handlePageChange = (page) => {
     const newSkip = (page - 1) * limit;
-    if (searchQuery) {
-      dispatch(searchProducts({ query: searchQuery, limit, skip: newSkip }));
-    } else {
-      dispatch(fetchProducts({ limit, skip: newSkip }));
-    }
+    dispatch(setSkip(newSkip));
   };
 
-  const handleSearch = (query) => {
+  const handleSearch = React.useCallback((query) => {
     dispatch(setSearchQuery(query));
-    // When searching, reset skip to 0
-    if (query) {
-      dispatch(searchProducts({ query, limit, skip: 0 }));
-    } else {
-      dispatch(fetchProducts({ limit, skip: 0 }));
-    }
+    dispatch(setSkip(0));
+  }, [dispatch]);
+
+  const handleCategoryChange = (e) => {
+    const category = e.target.value;
+    dispatch(setSelectedCategory(category));
+  };
+
+  const handleSortChange = (e) => {
+    const newSortBy = e.target.value;
+    dispatch(setSortParams({ sortBy: newSortBy, order }));
+  };
+
+  const handleOrderChange = (e) => {
+    const newOrder = e.target.value;
+    dispatch(setSortParams({ sortBy, order: newOrder }));
+  };
+
+  const handleLimitChange = (e) => {
+    const newLimit = Number(e.target.value);
+    dispatch(setLimit(newLimit));
   };
 
   const handleDelete = (id) => {
@@ -70,6 +101,65 @@ const ProductListPage = () => {
         </Button>
       </div>
 
+      <div className="filters-container glass">
+        <div className="filter-group">
+          <label>Category:</label>
+          <Dropdown
+            value={selectedCategory}
+            onChange={handleCategoryChange}
+            placeholder="All Categories"
+            options={[
+              { value: "", label: "All Categories" },
+              ...categories.map(cat => ({
+                value: cat.slug || cat,
+                label: cat.name || cat
+              }))
+            ]}
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Sort By:</label>
+          <Dropdown
+            value={sortBy}
+            onChange={handleSortChange}
+            options={[
+              { value: "title", label: "Title" },
+              { value: "price", label: "Price" },
+              { value: "rating", label: "Rating" },
+              { value: "stock", label: "Stock" }
+            ]}
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Order:</label>
+          <Dropdown
+            value={order}
+            onChange={handleOrderChange}
+            options={[
+              { value: "asc", label: "Ascending (A-Z / Low-High)" },
+              { value: "desc", label: "Descending (Z-A / High-Low)" }
+            ]}
+          />
+        </div>
+
+        <div className="filter-group">
+          <label>Show:</label>
+          <Dropdown
+            value={limit}
+            onChange={handleLimitChange}
+            options={[
+              { value: 10, label: "10 per page" },
+              { value: 15, label: "15 per page" },
+              { value: 20, label: "20 per page" },
+              { value: 30, label: "30 per page" },
+              { value: 50, label: "50 per page" }
+            ]}
+          />
+        </div>
+      </div>
+
       {error && (
         <div className="error-message">
           Failed to load products: {error}
@@ -89,10 +179,25 @@ const ProductListPage = () => {
             </tr>
           </thead>
           <tbody>
-            {loading && products.length === 0 ? (
-              <tr>
-                <td colSpan="6" className="loading-cell">Loading products...</td>
-              </tr>
+            {loading ? (
+              Array.from({ length: Math.min(limit, 10) }).map((_, i) => (
+                <tr key={`skeleton-${i}`} className="skeleton-row">
+                  <td>
+                    <div className="product-cell-info">
+                      <div className="skeleton skeleton-thumb"></div>
+                      <div className="skeleton-text-group">
+                        <div className="skeleton skeleton-text skeleton-title"></div>
+                        <div className="skeleton skeleton-text skeleton-brand"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><div className="skeleton skeleton-badge"></div></td>
+                  <td><div className="skeleton skeleton-text skeleton-price"></div></td>
+                  <td><div className="skeleton skeleton-text skeleton-stock"></div></td>
+                  <td><div className="skeleton skeleton-text skeleton-rating"></div></td>
+                  <td><div className="skeleton skeleton-action"></div></td>
+                </tr>
+              ))
             ) : products.length === 0 ? (
               <tr>
                 <td colSpan="6" className="empty-cell">No products found.</td>

@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProductById, clearSelectedProduct } from '../store/productSlice';
+import { fetchProductById, clearSelectedProduct, setSelectedProductFromCache } from '../store/productSlice';
 import Button from '../components/shared/Button';
 import './ProductDetailPage.css';
 
@@ -9,24 +9,31 @@ const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { selectedProduct: product, loading, error } = useSelector((state) => state.products);
+  const { selectedProduct: product, products, loading, error } = useSelector((state) => state.products);
+  const [activeImage, setActiveImage] = useState('');
 
   useEffect(() => {
-    dispatch(fetchProductById(id));
+    const existingProduct = products.find(p => p.id === Number(id));
+    if (existingProduct && existingProduct.images && existingProduct.reviews) {
+      dispatch(setSelectedProductFromCache(existingProduct));
+    } else {
+      dispatch(fetchProductById(id));
+    }
+    
     return () => {
       dispatch(clearSelectedProduct());
     };
-  }, [dispatch, id]);
+  }, [dispatch, id, products]);
 
-  if (loading) {
-    return <div className="detail-loading">Loading product details...</div>;
-  }
+  useEffect(() => {
+    if (product?.thumbnail) {
+      setActiveImage(product.thumbnail);
+    }
+  }, [product]);
 
   if (error) {
     return <div className="detail-error">Error: {error}</div>;
   }
-
-  if (!product) return null;
 
   return (
     <div className="product-detail-page">
@@ -39,24 +46,61 @@ const ProductDetailPage = () => {
         }>
           Back to Products
         </Button>
-        <Button variant="primary" onClick={() => navigate(`/products/edit/${product.id}`)}>
-          Edit Product
-        </Button>
+        {!loading && product && (
+          <Button variant="primary" onClick={() => navigate(`/products/edit/${product.id}`)}>
+            Edit Product
+          </Button>
+        )}
       </div>
 
       <div className="detail-content glass">
-        <div className="product-gallery">
-          <div className="main-image">
-            <img src={product.thumbnail} alt={product.title} />
-          </div>
-          <div className="image-thumbnails">
-            {product.images?.map((img, idx) => (
-              <div key={idx} className="thumb">
-                <img src={img} alt={`${product.title} ${idx + 1}`} />
+        {loading || !product ? (
+          <>
+            <div className="product-gallery">
+              <div className="main-image skeleton" style={{ width: '100%', aspectRatio: '1/1' }}></div>
+              <div className="image-thumbnails">
+                {[...Array(4)].map((_, idx) => (
+                  <div key={idx} className="thumb skeleton" style={{ border: 'none' }}></div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+            <div className="product-info">
+              <div className="skeleton" style={{ width: '120px', height: '20px', marginBottom: '12px' }}></div>
+              <div className="skeleton" style={{ width: '80%', height: '40px', marginBottom: '16px' }}></div>
+              <div className="skeleton" style={{ width: '60%', height: '24px', marginBottom: '24px' }}></div>
+              
+              <div className="price-section" style={{ border: 'none', padding: '0 0 24px 0' }}>
+                <div className="skeleton" style={{ width: '150px', height: '40px' }}></div>
+              </div>
+              
+              <div className="skeleton" style={{ width: '100%', height: '100px', marginBottom: '24px' }}></div>
+              <div className="skeleton" style={{ width: '100%', height: '150px' }}></div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="product-gallery">
+              <div className="main-image">
+                <img src={activeImage || product.thumbnail} alt={product.title} />
+              </div>
+              <div className="image-thumbnails">
+                <div 
+                  className={`thumb ${activeImage === product.thumbnail ? 'active' : ''}`}
+                  onClick={() => setActiveImage(product.thumbnail)}
+                >
+                  <img src={product.thumbnail} alt={`${product.title} thumbnail`} />
+                </div>
+                {product.images?.filter(img => img !== product.thumbnail).map((img, idx) => (
+                  <div 
+                    key={idx} 
+                    className={`thumb ${activeImage === img ? 'active' : ''}`}
+                    onClick={() => setActiveImage(img)}
+                  >
+                    <img src={img} alt={`${product.title} ${idx + 1}`} />
+                  </div>
+                ))}
+              </div>
+            </div>
 
         <div className="product-info">
           <div className="info-header">
@@ -125,7 +169,9 @@ const ProductDetailPage = () => {
               ))}
             </div>
           </div>
-        </div>
+          </div>
+          </>
+        )}
       </div>
     </div>
   );

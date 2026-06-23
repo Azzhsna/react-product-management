@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProductById, addProduct, updateProduct, clearSelectedProduct } from '../store/productSlice';
+import { fetchProductById, addProduct, updateProduct, clearSelectedProduct, fetchCategories } from '../store/productSlice';
 import Button from '../components/shared/Button';
 import Input from '../components/shared/Input';
 import './ProductFormPage.css';
@@ -12,7 +12,7 @@ const ProductFormPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   
-  const { selectedProduct, loading, error } = useSelector((state) => state.products);
+  const { selectedProduct, loading, error, categories } = useSelector((state) => state.products);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -25,13 +25,16 @@ const ProductFormPage = () => {
   });
 
   useEffect(() => {
+    if (categories.length === 0) {
+      dispatch(fetchCategories());
+    }
     if (isEditMode) {
       dispatch(fetchProductById(id));
     }
     return () => {
       dispatch(clearSelectedProduct());
     };
-  }, [dispatch, id, isEditMode]);
+  }, [dispatch, id, isEditMode, categories.length]);
 
   useEffect(() => {
     if (isEditMode && selectedProduct) {
@@ -78,8 +81,25 @@ const ProductFormPage = () => {
     }
   };
 
-  if (isEditMode && loading && !selectedProduct) {
-    return <div className="form-loading">Loading product data...</div>;
+
+  if (loading && isEditMode && !selectedProduct) {
+    return (
+      <div className="product-form-page">
+        <div className="form-header">
+          <div className="skeleton" style={{ width: '150px', height: '36px' }}></div>
+          <div className="skeleton" style={{ width: '200px', height: '40px' }}></div>
+        </div>
+        <div className="form-content glass" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {[...Array(6)].map((_, i) => (
+            <div key={i}>
+              <div className="skeleton" style={{ width: '100px', height: '16px', marginBottom: '8px' }}></div>
+              <div className="skeleton" style={{ width: '100%', height: '48px', borderRadius: '8px' }}></div>
+            </div>
+          ))}
+          <div className="skeleton" style={{ width: '150px', height: '48px', alignSelf: 'flex-end', marginTop: '16px' }}></div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -119,14 +139,23 @@ const ProductFormPage = () => {
               required
             />
 
-            <Input
-              label="Category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              placeholder="e.g. smartphones"
-              required
-            />
+            <div className="form-group">
+              <label className="input-label">Category <span className="text-danger">*</span></label>
+              <select
+                className="input-field"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+              >
+                <option value="" disabled>Select Category</option>
+                {categories.map((cat, idx) => (
+                  <option key={idx} value={cat.slug || cat}>
+                    {cat.name || cat}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <Input
               label="Price ($)"

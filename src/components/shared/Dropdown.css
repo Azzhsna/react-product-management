@@ -1,0 +1,103 @@
+.custom-dropdown {
+  position: relative;
+  min-width: 160px;
+  user-select: none;
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.custom-dropdown.open .dropdown-header,
+.dropdown-header:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-primary);
+}
+
+.custom-dropdown.open .dropdown-header {
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.2);
+}
+
+.dropdown-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.custom-dropdown.open .dropdown-icon {
+  transform: rotate(180deg);
+  color: var(--accent-primary);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  border-radius: var(--radius-sm);
+  background: rgba(15, 15, 26, 0.95);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  padding: 8px 0;
+  animation: slideDown var(--transition-fast) ease forwards;
+}
+
+.dropdown-item {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.dropdown-item.selected {
+  background: rgba(108, 92, 231, 0.15);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+/* Custom Scrollbar for Dropdown Menu */
+.dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dropdown-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+.dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

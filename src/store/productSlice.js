@@ -3,9 +3,33 @@ import { apiGet, apiPost, apiPut, apiDelete } from '../services/api';
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async ({ limit = 10, skip = 0 }, { rejectWithValue }) => {
+  async ({ limit = 10, skip = 0, sortBy = 'title', order = 'asc' }, { rejectWithValue }) => {
     try {
-      return await apiGet(`/products?limit=${limit}&skip=${skip}`);
+      return await apiGet(`/products?limit=${limit}&skip=${skip}&sortBy=${sortBy}&order=${order}`);
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchProductsByCategory = createAsyncThunk(
+  'products/fetchProductsByCategory',
+  async ({ category, limit = 10, skip = 0, sortBy = 'title', order = 'asc' }, { rejectWithValue }) => {
+    try {
+      // dummyjson doesn't support sortBy alongside category filter directly in the same way, 
+      // but we will append them just in case they support it or for consistency
+      return await apiGet(`/products/category/${category}?limit=${limit}&skip=${skip}&sortBy=${sortBy}&order=${order}`);
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchCategories = createAsyncThunk(
+  'products/fetchCategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await apiGet(`/products/categories`);
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -25,9 +49,9 @@ export const fetchProductById = createAsyncThunk(
 
 export const searchProducts = createAsyncThunk(
   'products/searchProducts',
-  async ({ query, limit = 10, skip = 0 }, { rejectWithValue }) => {
+  async ({ query, limit = 10, skip = 0, sortBy = 'title', order = 'asc' }, { rejectWithValue }) => {
     try {
-      return await apiGet(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}&skip=${skip}`);
+      return await apiGet(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}&skip=${skip}&sortBy=${sortBy}&order=${order}`);
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -71,9 +95,13 @@ export const deleteProduct = createAsyncThunk(
 const initialState = {
   products: [],
   selectedProduct: null,
+  categories: [],
+  selectedCategory: '',
   total: 0,
   skip: 0,
   limit: 10,
+  sortBy: 'title',
+  order: 'asc',
   loading: false,
   error: null,
   searchQuery: '',
@@ -91,6 +119,25 @@ const productSlice = createSlice({
     },
     setSearchQuery: (state, action) => {
       state.searchQuery = action.payload;
+    },
+    setSelectedCategory: (state, action) => {
+      state.selectedCategory = action.payload;
+      state.skip = 0; // reset skip when category changes
+    },
+    setSortParams: (state, action) => {
+      state.sortBy = action.payload.sortBy;
+      state.order = action.payload.order;
+      state.skip = 0; // reset skip when sort changes
+    },
+    setSkip: (state, action) => {
+      state.skip = action.payload;
+    },
+    setLimit: (state, action) => {
+      state.limit = action.payload;
+      state.skip = 0;
+    },
+    setSelectedProductFromCache: (state, action) => {
+      state.selectedProduct = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -104,12 +151,33 @@ const productSlice = createSlice({
         state.loading = false;
         state.products = action.payload.products;
         state.total = action.payload.total;
-        state.skip = action.payload.skip;
-        state.limit = action.payload.limit;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      });
+
+    // Fetch Products by Category
+    builder
+      .addCase(fetchProductsByCategory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchProductsByCategory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.products = action.payload.products;
+        state.total = action.payload.total;
+      })
+      .addCase(fetchProductsByCategory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      });
+
+    // Fetch Categories
+    builder
+      .addCase(fetchCategories.fulfilled, (state, action) => {
+        // dummyjson /products/categories returns array of objects with slug and name
+        state.categories = action.payload;
       });
 
     // Fetch Product by ID
@@ -137,8 +205,6 @@ const productSlice = createSlice({
         state.loading = false;
         state.products = action.payload.products;
         state.total = action.payload.total;
-        state.skip = action.payload.skip;
-        state.limit = action.payload.limit;
       })
       .addCase(searchProducts.rejected, (state, action) => {
         state.loading = false;
@@ -173,5 +239,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { clearSelectedProduct, clearError, setSearchQuery } = productSlice.actions;
+export const { clearSelectedProduct, clearError, setSearchQuery, setSelectedCategory, setSortParams, setSkip, setLimit, setSelectedProductFromCache } = productSlice.actions;
 export default productSlice.reducer;
