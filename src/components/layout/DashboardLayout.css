@@ -1,0 +1,43 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  /* Optional: Background pattern for the main app area */
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(108, 92, 231, 0.05), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(0, 206, 201, 0.05), transparent 25%);
+  background-attachment: fixed;
+}
+
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: padding-left var(--transition-normal);
+  width: 100%;
+}
+
+.main-content {
+  flex: 1;
+  padding: 32px;
+  overflow-x: hidden;
+}
+
+/* Desktop Layout */
+@media (min-width: 769px) {
+  .main-wrapper.sidebar-open {
+    padding-left: var(--sidebar-width);
+  }
+}
+
+/* Mobile Layout */
+@media (max-width: 768px) {
+  .main-wrapper {
+    padding-left: 0 !important;
+  }
+  
+  .main-content {
+    padding: 20px 16px;
+  }
+}

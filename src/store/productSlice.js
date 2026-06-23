@@ -3,10 +3,9 @@ import { apiGet, apiPost, apiPut, apiDelete } from '../services/api';
 
 export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
-  async ({ limit = 10, skip = 0 } = {}, { rejectWithValue }) => {
+  async ({ limit = 10, skip = 0 }, { rejectWithValue }) => {
     try {
-      const data = await apiGet(`/products?limit=${limit}&skip=${skip}`);
-      return data;
+      return await apiGet(`/products?limit=${limit}&skip=${skip}`);
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -17,8 +16,7 @@ export const fetchProductById = createAsyncThunk(
   'products/fetchProductById',
   async (id, { rejectWithValue }) => {
     try {
-      const data = await apiGet(`/products/${id}`);
-      return data;
+      return await apiGet(`/products/${id}`);
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -29,10 +27,7 @@ export const searchProducts = createAsyncThunk(
   'products/searchProducts',
   async ({ query, limit = 10, skip = 0 }, { rejectWithValue }) => {
     try {
-      const data = await apiGet(
-        `/products/search?q=${encodeURIComponent(query)}&limit=${limit}&skip=${skip}`
-      );
-      return data;
+      return await apiGet(`/products/search?q=${encodeURIComponent(query)}&limit=${limit}&skip=${skip}`);
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -43,8 +38,7 @@ export const addProduct = createAsyncThunk(
   'products/addProduct',
   async (productData, { rejectWithValue }) => {
     try {
-      const data = await apiPost('/products/add', productData);
-      return data;
+      return await apiPost('/products/add', productData);
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -53,10 +47,9 @@ export const addProduct = createAsyncThunk(
 
 export const updateProduct = createAsyncThunk(
   'products/updateProduct',
-  async ({ id, ...productData }, { rejectWithValue }) => {
+  async ({ id, ...data }, { rejectWithValue }) => {
     try {
-      const data = await apiPut(`/products/${id}`, productData);
-      return data;
+      return await apiPut(`/products/${id}`, data);
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -67,8 +60,8 @@ export const deleteProduct = createAsyncThunk(
   'products/deleteProduct',
   async (id, { rejectWithValue }) => {
     try {
-      await apiDelete(`/products/${id}`);
-      return id;
+      const result = await apiDelete(`/products/${id}`);
+      return { id, ...result }; // Ensure ID is returned for reducer
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -83,22 +76,26 @@ const initialState = {
   limit: 10,
   loading: false,
   error: null,
+  searchQuery: '',
 };
 
 const productSlice = createSlice({
   name: 'products',
   initialState,
   reducers: {
-    clearSelectedProduct(state) {
+    clearSelectedProduct: (state) => {
       state.selectedProduct = null;
     },
-    clearError(state) {
+    clearError: (state) => {
       state.error = null;
     },
+    setSearchQuery: (state, action) => {
+      state.searchQuery = action.payload;
+    }
   },
   extraReducers: (builder) => {
+    // Fetch Products
     builder
-      // fetchProducts
       .addCase(fetchProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -113,8 +110,10 @@ const productSlice = createSlice({
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      // fetchProductById
+      });
+
+    // Fetch Product by ID
+    builder
       .addCase(fetchProductById.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -126,8 +125,10 @@ const productSlice = createSlice({
       .addCase(fetchProductById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      // searchProducts
+      });
+
+    // Search Products
+    builder
       .addCase(searchProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -142,67 +143,35 @@ const productSlice = createSlice({
       .addCase(searchProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-      })
-      // addProduct
-      .addCase(addProduct.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+      });
+
+    // Add Product
+    builder
       .addCase(addProduct.fulfilled, (state, action) => {
-        state.loading = false;
         state.products.unshift(action.payload);
         state.total += 1;
-      })
-      .addCase(addProduct.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // updateProduct
-      .addCase(updateProduct.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+      });
+
+    // Update Product
+    builder
       .addCase(updateProduct.fulfilled, (state, action) => {
-        state.loading = false;
-        const index = state.products.findIndex(
-          (p) => p.id === action.payload.id
-        );
+        const index = state.products.findIndex(p => p.id === action.payload.id);
         if (index !== -1) {
           state.products[index] = action.payload;
         }
-        if (
-          state.selectedProduct &&
-          state.selectedProduct.id === action.payload.id
-        ) {
+        if (state.selectedProduct?.id === action.payload.id) {
           state.selectedProduct = action.payload;
         }
-      })
-      .addCase(updateProduct.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      // deleteProduct
-      .addCase(deleteProduct.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+      });
+
+    // Delete Product
+    builder
       .addCase(deleteProduct.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products = state.products.filter((p) => p.id !== action.payload);
+        state.products = state.products.filter(p => p.id !== action.payload.id);
         state.total -= 1;
-        if (
-          state.selectedProduct &&
-          state.selectedProduct.id === action.payload
-        ) {
-          state.selectedProduct = null;
-        }
-      })
-      .addCase(deleteProduct.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
       });
   },
 });
 
-export const { clearSelectedProduct, clearError } = productSlice.actions;
+export const { clearSelectedProduct, clearError, setSearchQuery } = productSlice.actions;
 export default productSlice.reducer;

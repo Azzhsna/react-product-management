@@ -1,4 +1,4 @@
-const BASE_URL = 'https://dummyjson.com';
+export const BASE_URL = 'https://dummyjson.com';
 
 const getHeaders = () => {
   const token = localStorage.getItem('accessToken');
@@ -8,7 +8,10 @@ const getHeaders = () => {
 };
 
 export const apiGet = async (endpoint) => {
-  const res = await fetch(`${BASE_URL}${endpoint}`, { headers: getHeaders() });
+  const res = await fetch(`${BASE_URL}${endpoint}`, { 
+    headers: getHeaders(),
+    credentials: 'omit' // We are using Bearer tokens primarily, dummyjson supports include for cookies but let's stick to explicit headers if possible, or use include as user requested
+  });
   if (!res.ok) throw new Error((await res.json()).message || 'Request failed');
   return res.json();
 };
